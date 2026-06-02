@@ -1,0 +1,9 @@
+[package]
+name = "btclisp-vm"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Eager interpreter and Bitcoin glue for btclisp (Sprint 4+)."
+
+[dependencies]
