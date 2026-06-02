@@ -14,10 +14,13 @@
 pub mod ast;
 pub mod error;
 pub mod lex;
+pub mod lower;
 pub mod parse;
+pub mod resolve;
 
 pub use ast::{Atom, Expr, Form};
 pub use error::Error;
+pub use lower::{lower_program, Program};
 
 /// Lex and parse a complete source program into top-level [`Form`]s.
 ///
@@ -27,6 +30,23 @@ pub use error::Error;
 pub fn parse_program(src: &str) -> Result<Vec<Form>, Error> {
     let tokens = lex::lex(src)?;
     parse::Parser::new(tokens).parse_program()
+}
+
+/// Compile source text all the way to a lowered core [`Program`].
+///
+/// # Errors
+///
+/// Returns the first lexing, parsing, or lowering [`Error`] encountered.
+///
+/// # Example
+///
+/// ```
+/// let program = btclisp_compiler::compile("(+ 1 2)").unwrap();
+/// assert_eq!(program.core.to_sexpr(), "(0x17 (0x00 . 0x01) (0x00 . 0x02))");
+/// ```
+pub fn compile(src: &str) -> Result<Program, Error> {
+    let forms = parse_program(src)?;
+    lower_program(&forms)
 }
 
 #[cfg(test)]
