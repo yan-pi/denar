@@ -1,0 +1,16 @@
+[package]
+name = "btclisp-cli"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "btclispc command-line interface."
+
+[[bin]]
+name = "btclispc"
+path = "src/main.rs"
+
+[dependencies]
+btclisp-compiler.workspace = true
+anyhow.workspace = true
+clap.workspace = true
