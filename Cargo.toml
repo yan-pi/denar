@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = ["crates/core"]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.80"
+license = "MIT"
+
+[workspace.dependencies]
+btclisp-core = { path = "crates/core" }
+btclisp-compiler = { path = "crates/compiler" }
+btclisp-codec = { path = "crates/codec" }
+btclisp-vm = { path = "crates/vm" }
+bytes = "1"
+thiserror = "1"
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
