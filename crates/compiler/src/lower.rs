@@ -557,6 +557,14 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "v0,2: requires capturing closures (env-tree); see docs/architecture/0001-environment-representation.md"]
+    fn nested_scope_captures_outer_variable() {
+        // `a` (a param) should be visible inside the nested let body. v0,1's
+        // flat, non-capturing env rejects this; the v0,2 env-tree will allow it.
+        assert!(crate::compile("(defun f (a) (let ((b 1)) (+ a b)))\n(f 5)").is_ok());
+    }
+
+    #[test]
     fn rejects_mutual_recursion() {
         let err = crate::compile("(defun ping (n) (pong n))\n(defun pong (n) (ping n))\n(ping 1)")
             .unwrap_err();
