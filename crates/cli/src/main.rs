@@ -43,10 +43,13 @@ enum Cmd {
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
-    /// Disassemble bytecode back to an s-expression.
+    /// Disassemble bytecode to mnemonic assembly (or raw bytes with --raw).
     Disasm {
         /// Path to a `.bin` file.
         input: PathBuf,
+        /// Render raw `0x..` atoms instead of opcode mnemonics.
+        #[arg(long)]
+        raw: bool,
     },
     /// Run compiled bytecode in the interpreter.
     Run {
@@ -85,7 +88,7 @@ fn run() -> Result<()> {
         Cmd::Check { input, core } => cmd_check(&input, core),
         Cmd::Fmt { input, in_place } => cmd_fmt(&input, in_place),
         Cmd::Compile { input, output } => cmd_compile(&input, output.as_deref()),
-        Cmd::Disasm { input } => cmd_disasm(&input),
+        Cmd::Disasm { input, raw } => cmd_disasm(&input, raw),
         Cmd::Run {
             input,
             env,
@@ -226,11 +229,15 @@ fn cmd_compile(path: &Path, output: Option<&Path>) -> Result<()> {
     Ok(())
 }
 
-fn cmd_disasm(path: &Path) -> Result<()> {
+fn cmd_disasm(path: &Path, raw: bool) -> Result<()> {
     let bytes = std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
     let expr =
         btclisp_codec::decode(&bytes).with_context(|| format!("decoding {}", path.display()))?;
-    println!("{}", expr.to_sexpr());
+    if raw {
+        println!("{}", expr.to_sexpr());
+    } else {
+        println!("{}", btclisp_codec::disassemble(&expr));
+    }
     Ok(())
 }
 
@@ -303,36 +310,26 @@ fn read_source(path: &Path) -> Result<String> {
     std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))
 }
 
-/// Print a compact `path:line:col` diagnostic with a caret under the span.
+/// Render a compiler diagnostic with ariadne: a labelled, underlined span.
 fn print_diagnostic(path: &Path, src: &str, err: &Error) {
-    match err.span() {
-        Some(span) => {
-            let (line, col) = line_col(src, span.start);
-            eprintln!("{}:{}:{}: error: {}", path.display(), line, col, err);
-            if let Some(text) = src.lines().nth(line - 1) {
-                eprintln!("  {line:>4} | {text}");
-                let pad = " ".repeat(col.saturating_sub(1));
-                eprintln!("       | {pad}^");
-            }
-        }
-        None => eprintln!("{}: error: {}", path.display(), err),
-    }
-}
+    use ariadne::{Label, Report, ReportKind, Source};
 
-/// Convert a byte offset into a 1-based `(line, column)`.
-fn line_col(src: &str, offset: usize) -> (usize, usize) {
-    let mut line = 1;
-    let mut col = 1;
-    for (i, ch) in src.char_indices() {
-        if i >= offset {
-            break;
-        }
-        if ch == '\n' {
-            line += 1;
-            col = 1;
-        } else {
-            col += 1;
-        }
+    let name = path.display().to_string();
+    let span = err.span().map_or(src.len()..src.len(), |s| {
+        s.start..s.end.max(s.start + 1).min(src.len().max(1))
+    });
+
+    let report = Report::build(ReportKind::Error, name.clone(), span.start)
+        .with_message(err.to_string())
+        .with_label(
+            Label::new((name.clone(), span))
+                .with_message(err.to_string())
+                .with_color(ariadne::Color::Red),
+        )
+        .finish();
+
+    // Best-effort: fall back to a plain message if rendering fails.
+    if report.eprint((name.clone(), Source::from(src))).is_err() {
+        eprintln!("{name}: error: {err}");
     }
-    (line, col)
 }
