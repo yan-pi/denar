@@ -12,5 +12,9 @@ path = "src/main.rs"
 
 [dependencies]
 btclisp-compiler.workspace = true
+btclisp-codec.workspace = true
+btclisp-vm.workspace = true
 anyhow.workspace = true
 clap.workspace = true
+bitcoin.workspace = true
+serde_json.workspace = true
