@@ -55,14 +55,25 @@ struct Lowerer<'a> {
     table: &'a FunctionTable,
     bodies: HashMap<String, CoreExpr>,
     in_progress: Vec<String>,
+    /// Functions that call themselves directly (compiled via auto-quine).
+    self_recursive: HashSet<String>,
+    /// The self-recursive function whose body is currently being lowered.
+    current_self: Option<String>,
 }
 
 impl<'a> Lowerer<'a> {
     fn new(table: &'a FunctionTable) -> Self {
+        let self_recursive = table
+            .names()
+            .filter(|name| table.get(name).is_some_and(|f| body_calls(&f.body, name)))
+            .cloned()
+            .collect();
         Self {
             table,
             bodies: HashMap::new(),
             in_progress: Vec::new(),
+            self_recursive,
+            current_self: None,
         }
     }
 
@@ -94,6 +105,8 @@ impl<'a> Lowerer<'a> {
         if let Some(body) = self.bodies.get(name) {
             return Ok(body.clone());
         }
+        // A name already in progress (and not the current self) is mutual
+        // recursion, which v0,1 does not support.
         if self.in_progress.iter().any(|n| n == name) {
             return Err(Error::RecursiveCall {
                 span: call_span,
@@ -101,9 +114,20 @@ impl<'a> Lowerer<'a> {
             });
         }
 
+        let is_recursive = self.self_recursive.contains(name);
         self.in_progress.push(name.to_string());
-        let mut scope = Scope::closed(&func.params);
+        let previous_self = self.current_self.take();
+        if is_recursive {
+            self.current_self = Some(name.to_string());
+        }
+        // A recursive body receives itself at env slot 0, shifting params by one.
+        let mut scope = if is_recursive {
+            Scope::closed_with_offset(&func.params, 1)
+        } else {
+            Scope::closed(&func.params)
+        };
         let body = self.lower_expr(&func.body, &mut scope)?;
+        self.current_self = previous_self;
         self.in_progress.pop();
         self.bodies.insert(name.to_string(), body.clone());
         Ok(body)
@@ -241,7 +265,19 @@ impl<'a> Lowerer<'a> {
                 });
             }
             let lowered = self.lower_args(args, scope)?;
+
+            // A call to the function whose body we are lowering: recurse via the
+            // program already held at env slot 0.
+            if self.current_self.as_deref() == Some(name) {
+                return Ok(make_apply_recursive(env_ref(2), lowered));
+            }
+
             let body = self.function_body(name, head.span)?;
+            if self.self_recursive.contains(name) {
+                // External call to a self-recursive function: bootstrap by
+                // seeding the env with the (quoted) program itself.
+                return Ok(make_apply_recursive(core_quote(body), lowered));
+            }
             return Ok(make_apply(body, lowered));
         }
 
@@ -390,6 +426,40 @@ fn make_apply(body: CoreExpr, args: Vec<CoreExpr>) -> CoreExpr {
     core_app(Opcode::A, vec![core_quote(body), build_env(args)])
 }
 
+/// Build `(c head a0 a1 ... )` as a value: `(c head (c a0 (c a1 (q))))`.
+fn build_env_with_head(head: CoreExpr, args: Vec<CoreExpr>) -> CoreExpr {
+    core_app(Opcode::C, vec![head, build_env(args)])
+}
+
+/// `(a SELF (c SELF <args>))` — apply a self-referential program.
+///
+/// `self_prog` is `(q . body)` at a bootstrap call and `env_ref(2)` (the
+/// program already in the env) inside the recursive body.
+fn make_apply_recursive(self_prog: CoreExpr, args: Vec<CoreExpr>) -> CoreExpr {
+    let env = build_env_with_head(self_prog.clone(), args);
+    core_app(Opcode::A, vec![self_prog, env])
+}
+
+/// Does `expr` syntactically contain a call to the function named `name`?
+fn body_calls(expr: &Expr, name: &str) -> bool {
+    match expr {
+        Expr::Atom { .. } | Expr::Quote { .. } => false,
+        Expr::App { head, args, .. } => {
+            head.name == name || args.iter().any(|a| body_calls(a, name))
+        }
+        Expr::If {
+            cond, then, els, ..
+        } => body_calls(cond, name) || body_calls(then, name) || body_calls(els, name),
+        Expr::Let { bindings, body, .. } => {
+            bindings.iter().any(|b| body_calls(&b.value, name))
+                || body.iter().any(|e| body_calls(e, name))
+        }
+        Expr::Cond { clauses, .. } => clauses
+            .iter()
+            .any(|c| body_calls(&c.test, name) || body_calls(&c.result, name)),
+    }
+}
+
 /// `(a (i C (q . T) (q . E)) 1)` — run the selected branch in the current env.
 fn core_if(cond: CoreExpr, then: CoreExpr, els: CoreExpr) -> CoreExpr {
     let select = core_app(Opcode::If, vec![cond, core_quote(then), core_quote(els)]);
@@ -481,8 +551,15 @@ mod tests {
     }
 
     #[test]
-    fn rejects_recursive_call() {
-        let err = crate::compile("(defun f (n) (f n))\n(f 1)").unwrap_err();
+    fn self_recursion_lowers() {
+        // Direct self-recursion is supported via auto-quine.
+        assert!(crate::compile("(defun f (n) (if (< n 1) 0 (f (- n 1))))\n(f 3)").is_ok());
+    }
+
+    #[test]
+    fn rejects_mutual_recursion() {
+        let err = crate::compile("(defun ping (n) (pong n))\n(defun pong (n) (ping n))\n(ping 1)")
+            .unwrap_err();
         assert!(matches!(err, crate::Error::RecursiveCall { .. }));
     }
 
