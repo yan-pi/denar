@@ -371,23 +371,3 @@ proptest    = "1"
 4. Codec endianness do varint em `0x74` e `0x7f`: little-endian base-128 (LEB128) ou big-endian? Recomendação: LEB128 unsigned.
 
 ---
-
-## 15. Claude Code prompt template
-
-```
-You are implementing btclisp per SPEC.md (edit token BTL01A). Constraints:
-
-- Respect crate boundaries declared in §2. No new crates without spec amendment.
-- All code must satisfy §12 Conventions.
-- For each public function added, write at least one unit test in the same file (#[cfg(test)] mod tests).
-- For codec changes, add or extend a proptest in crates/codec/tests/.
-- For interpreter changes, add an example under examples/ with .bin.hex and .expected.
-- Pause and ask before changes that would alter: CoreExpr shape, opcode byte values,
-  env-ref encoding, codec table, or public Error variants.
-- When implementing an opcode, add a row to the dispatch table in vm/src/eval.rs and
-  the corresponding handler in vm/src/ops/<group>.rs.
-- Commits: conventional commits (feat:, fix:, refactor:, test:, docs:).
-- After each sprint in §13, run: cargo fmt && cargo clippy --all-targets -- -D warnings && cargo test --all.
-
-Start with Sprint 1.
-```
