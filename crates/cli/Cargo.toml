@@ -16,5 +16,6 @@ btclisp-codec.workspace = true
 btclisp-vm.workspace = true
 anyhow.workspace = true
 clap.workspace = true
+ariadne.workspace = true
 bitcoin.workspace = true
 serde_json.workspace = true
