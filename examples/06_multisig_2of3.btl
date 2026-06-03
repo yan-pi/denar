@@ -1,0 +1,8 @@
+; 2-of-3 multisig: each verify yields 1 (valid) or 0 (empty sig); the spend
+; succeeds when at least two signatures are present and valid. A non-empty
+; but invalid signature fails the program. (Evaluated in tests/eval.rs with
+; real signatures, since it needs a transaction context.)
+(< 1
+   (+ (bip340_verify pk1 (bip342_txmsg) sig1)
+      (bip340_verify pk2 (bip342_txmsg) sig2)
+      (bip340_verify pk3 (bip342_txmsg) sig3)))

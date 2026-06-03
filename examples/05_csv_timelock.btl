@@ -1,0 +1,3 @@
+; Absolute timelock: the spend is only valid once the transaction's
+; nLockTime (tx field 1) has passed the deadline from the witness env.
+(< deadline (tx 1))
