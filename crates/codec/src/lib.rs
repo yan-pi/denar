@@ -15,9 +15,11 @@
 //! ```
 
 pub mod decode;
+pub mod disasm;
 pub mod encode;
 pub mod error;
 
 pub use decode::decode;
+pub use disasm::disassemble;
 pub use encode::encode;
 pub use error::Error;
