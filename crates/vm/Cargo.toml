@@ -4,6 +4,17 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Eager interpreter and Bitcoin glue for btclisp (Sprint 4+)."
+description = "Eager interpreter for btclisp core expressions (Sprint 4)."
 
 [dependencies]
+btclisp-core.workspace = true
+btclisp-codec.workspace = true
+bytes.workspace = true
+thiserror.workspace = true
+sha2.workspace = true
+ripemd.workspace = true
+secp256k1.workspace = true
+bitcoin.workspace = true
+
+[dev-dependencies]
+btclisp-compiler.workspace = true
