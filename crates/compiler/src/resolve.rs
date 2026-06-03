@@ -125,7 +125,15 @@ impl FunctionTable {
 #[derive(Clone, Debug)]
 pub enum Scope {
     /// A closed scope: only the listed names are visible (`defun`/`let` body).
-    Closed(HashMap<String, usize>),
+    ///
+    /// `offset` shifts every position deeper, reserving slot 0 (used by
+    /// recursive bodies to hold the program itself).
+    Closed {
+        /// Reverse index from name to position.
+        index: HashMap<String, usize>,
+        /// Number of leading env slots reserved before the first binding.
+        offset: usize,
+    },
     /// The top-level scope: free identifiers become implicit positional params.
     Top {
         /// Implicit parameter names, in first-appearance order.
@@ -145,15 +153,21 @@ impl Scope {
         }
     }
 
-    /// A closed scope binding `names` at consecutive positions.
+    /// A closed scope binding `names` at consecutive positions from slot 0.
     #[must_use]
     pub fn closed(names: &[String]) -> Self {
+        Self::closed_with_offset(names, 0)
+    }
+
+    /// A closed scope binding `names` starting `offset` slots in.
+    #[must_use]
+    pub fn closed_with_offset(names: &[String], offset: usize) -> Self {
         let index = names
             .iter()
             .enumerate()
             .map(|(i, n)| (n.clone(), i))
             .collect();
-        Scope::Closed(index)
+        Scope::Closed { index, offset }
     }
 
     /// Returns `true` for the top-level scope.
@@ -166,9 +180,10 @@ impl Scope {
     #[must_use]
     pub fn get(&self, name: &str) -> Option<u64> {
         match self {
-            Scope::Closed(index) | Scope::Top { index, .. } => {
-                index.get(name).copied().map(param_path)
+            Scope::Closed { index, offset } => {
+                index.get(name).copied().map(|i| param_path(i + offset))
             }
+            Scope::Top { index, .. } => index.get(name).copied().map(param_path),
         }
     }
 
@@ -184,7 +199,7 @@ impl Scope {
                 index.insert(name.to_string(), position);
                 param_path(position)
             }
-            Scope::Closed(_) => param_path(0),
+            Scope::Closed { .. } => param_path(0),
         }
     }
 
@@ -193,7 +208,7 @@ impl Scope {
     pub fn into_top_order(self) -> Vec<String> {
         match self {
             Scope::Top { order, .. } => order,
-            Scope::Closed(_) => Vec::new(),
+            Scope::Closed { .. } => Vec::new(),
         }
     }
 }
