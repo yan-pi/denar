@@ -1,0 +1,2 @@
+; Adds two constants. Demonstrates basic arithmetic lowering.
+(+ 2 3)

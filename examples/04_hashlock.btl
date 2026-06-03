@@ -1,0 +1,2 @@
+; Hashlock: the preimage must hash to a fixed target.
+(= (sha256 preimage) target)

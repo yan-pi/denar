@@ -1,0 +1,2 @@
+; Round-trip a quoted datum through the serializer (wr) and parser (rd).
+(rd (wr '(+ 1 2)))

@@ -1,0 +1,5 @@
+; Pay-to-pubkey: verify a BIP340 signature over the taproot script-path
+; sighash. `pk` and `sig` come from the witness env; the message is the
+; current input's BIP342 sighash. (Evaluated in tests/eval.rs with a real
+; signature, since it needs a transaction context.)
+(bip340_verify pk (bip342_txmsg) sig)
