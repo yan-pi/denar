@@ -18,3 +18,8 @@ bitcoin.workspace = true
 
 [dev-dependencies]
 btclisp-compiler.workspace = true
+criterion.workspace = true
+
+[[bench]]
+name = "pipeline"
+harness = false
