@@ -1,0 +1,14 @@
+; HTLC (Hash Time-Locked Contract) — the Lightning building block.
+;
+; Two spending paths, selected by the witness `claim` flag:
+;   - Bob claims by revealing a preimage of the committed hash and signing;
+;   - Alice refunds once nLockTime (tx field 1) passes the deadline, and signs.
+;
+; Contract parameters (hash, pubkeys, deadline) are literals committed in the
+; tapleaf. The witness env supplies (claim preimage bob_sig alice_sig).
+; (Evaluated in tests/htlc.rs with real signatures and a transaction context.)
+(if claim
+    (all (= (sha256 preimage) 0xde1f22b047816858cdebb26411abb2aef0581cf02dca243d5650d8d678f8f15a)
+         (bip340_verify 0x4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa (bip342_txmsg) bob_sig))
+    (all (< 750000 (tx 1))
+         (bip340_verify 0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27 (bip342_txmsg) alice_sig)))
