@@ -1,0 +1,3 @@
+; Demo 1: o menor programa útil.
+; A apresentação começa aqui: fonte btclisp -> core -> bytes -> VM.
+(+ 40 2)

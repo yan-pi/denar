@@ -1,0 +1,7 @@
+; Demo 3: açúcar de superfície.
+; `let` monta um novo ambiente; `if` vira um core `i` com branches quotados.
+(let ((x 40)
+      (y 2))
+  (if (= (+ x y) 42)
+      1
+      0))

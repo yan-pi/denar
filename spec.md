@@ -370,4 +370,3 @@ proptest    = "1"
 3. Recursão na linguagem de superfície: aceitar `(defun f … (f …))` via auto-quine? Ou exigir `a` explícito? Recomendação: quine automático no lowering (mais ergonômico para banca).
 4. Codec endianness do varint em `0x74` e `0x7f`: little-endian base-128 (LEB128) ou big-endian? Recomendação: LEB128 unsigned.
 
----
