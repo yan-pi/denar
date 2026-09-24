@@ -17,7 +17,7 @@ mdc: true
 Uma linguagem Lisp pequena como estudo de caso de compiladores.
 
 <div class="mt-10 text-sm opacity-70">
-Disciplina de Compiladores · 25 min · Yan Barbara
+Disciplina de Compiladores · Yan Fernandes
 </div>
 
 <!--
@@ -330,7 +330,7 @@ Resultado esperado:
 
 Ponto conceitual:
 
-- `defun` é açúcar de superfície.
+- `defun` é sugar de superfície.
 - A função é baixada para `CoreExpr`.
 - Recursão direta usa auto-quine.
 

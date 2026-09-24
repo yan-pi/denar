@@ -471,8 +471,8 @@ Se precisar decorar só uma sequência, decore esta:
 1. “O projeto é um mini-compilador completo.”
 2. “Fonte `.btl` vira tokens pelo lexer.”
 3. “Tokens viram AST pelo parser.”
-4. “A AST ainda tem açúcar sintático.”
-5. “Lowering remove esse açúcar e gera `CoreExpr`.”
+4. “A AST ainda tem sintax sugar.”
+5. “Lowering remove esse sugar e gera `CoreExpr`.”
 6. “`CoreExpr` é uma IR mínima: nil, atom e cons.”
 7. “O codec transforma essa IR em bytes canônicos.”
 8. “A VM interpreta esses bytes/CoreExpr e produz um `Value`.”

@@ -206,7 +206,7 @@ Mensagem didática:
 
 A AST de superfície representa o que o usuário escreveu.
 
-Nós chamamos de “superfície” porque ela ainda tem açúcar sintático:
+Nós chamamos de “superfície” porque ela ainda tem sintatic sugar:
 
 - `let`.
 - `if`.
