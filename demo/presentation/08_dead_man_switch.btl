@@ -1,0 +1,7 @@
+; Bitcoin-focused dead man's switch.
+;
+; Before the transaction locktime reaches `deadline`, only the owner signature
+; should validate. After the deadline, only the heir signature should validate.
+(if (< (tx 1) deadline)
+    (bip340_verify owner_pk (bip342_txmsg) owner_sig)
+    (bip340_verify heir_pk (bip342_txmsg) heir_sig))
